@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import data.RFIDdata;
+import data.LockData;
 import com.google.gson.Gson;
 
 import java.sql.*;
@@ -19,9 +19,9 @@ import java.sql.*;
 // Simply stores the last sensor name and value in memory.
 //No data is permanently stored.
 
-@WebServlet("/ValidateCard")
+@WebServlet("/DoorLookup")
 
-public class ValidateCard extends HttpServlet {
+public class DoorLookup extends HttpServlet {
 
 	// Collects or returns data for sensorname, sensorvalue parameters
 	private static final long serialVersionUID = 1L;
@@ -34,7 +34,7 @@ public class ValidateCard extends HttpServlet {
 	Statement statement;	
 	Gson gson = new Gson();
 
-	public ValidateCard() {
+	public DoorLookup() {
 		super();
 	}
 
@@ -50,10 +50,10 @@ public class ValidateCard extends HttpServlet {
 			throws ServletException, IOException {
 		response.setStatus(HttpServletResponse.SC_OK);
 
-		RFIDdata rfidData = new RFIDdata(null, null, null, null);
+		LockData rfidData = new LockData(null, null);
 		String jsonStringData = request.getParameter("stringJson");
 
-		rfidData = gson.fromJson(jsonStringData, RFIDdata.class);
+		rfidData = gson.fromJson(jsonStringData, LockData.class);
 		String resultsJson = getValidCardDetails(rfidData);
 		PrintWriter out = response.getWriter();
 		out.println(resultsJson);
@@ -102,15 +102,15 @@ public class ValidateCard extends HttpServlet {
 		doGet(request, response);
 	}
 
-	String getValidCardDetails(RFIDdata rfidData) {
+	String getValidCardDetails(LockData rfidData) {
 		System.out.println("getValidCardDetails reached");
-		String selectSQL = "SELECT * FROM validtags where tagid='" + rfidData.getTagid() + "' AND readerid='"
+		String selectSQL = "SELECT * FROM doorlookup where tagid='" + rfidData.getTagid() + "' AND readerid='"
 				+ rfidData.getReaderid() + "' ORDER BY roomid asc;";
 		System.out.println(selectSQL);
 
 		ResultSet results;
-		RFIDdata validCard = new RFIDdata(null, null, null, null);
-		String tagid = rfidData.getTagid();
+		LockData validCard = new LockData(null, null);
+		String tagid = rfidData.getRoomid();
 
 		getConnection();
 		try {
