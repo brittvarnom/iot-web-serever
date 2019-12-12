@@ -26,12 +26,8 @@ public class DoorLookup extends HttpServlet {
 	// Collects or returns data for sensorname, sensorvalue parameters
 	private static final long serialVersionUID = 1L;
 
-	// Local variables holding last values stored for each parameter
-	private String lastValidSensorNameStr = "no sensor";
-	private String lastValidSensorValueStr = "invalid";
-
 	Connection connection = null;
-	Statement statement;	
+	Statement statement;
 	Gson gson = new Gson();
 
 	public DoorLookup() {
@@ -54,7 +50,7 @@ public class DoorLookup extends HttpServlet {
 		String jsonStringData = request.getParameter("stringJson");
 
 		rfidData = gson.fromJson(jsonStringData, LockData.class);
-		String resultsJson = getValidCardDetails(rfidData);
+		String resultsJson = getRoomForDoor(rfidData);
 		PrintWriter out = response.getWriter();
 		out.println(resultsJson);
 		out.close();
@@ -102,15 +98,14 @@ public class DoorLookup extends HttpServlet {
 		doGet(request, response);
 	}
 
-	String getValidCardDetails(LockData rfidData) {
-		System.out.println("getValidCardDetails reached");
-		String selectSQL = "SELECT * FROM doorlookup where tagid='" + rfidData.getTagid() + "' AND readerid='"
-				+ rfidData.getReaderid() + "' ORDER BY roomid asc;";
+	String getRoomForDoor(LockData lockData) {
+		System.out.println("getRoomForDoor reached");
+		String selectSQL = "SELECT * FROM doorlookup where doorid='" + lockData.getDoorid() + "' ORDER BY roomid asc;";
 		System.out.println(selectSQL);
 
 		ResultSet results;
-		LockData validCard = new LockData(null, null);
-		String tagid = rfidData.getRoomid();
+		LockData roomData = new LockData(null, null);
+		String doorid = lockData.getRoomid();
 
 		getConnection();
 		try {
@@ -120,24 +115,20 @@ public class DoorLookup extends HttpServlet {
 				System.out.println("Success - valid result set");
 				do {
 					System.out.println("arrived");
-					validCard.setTagid(tagid);
-					validCard.setReaderid(rfidData.getReaderid());
-					validCard.setRoomid(results.getString("roomid"));
-					validCard.setValid("true");
+					roomData.setDoorid(doorid);
+					roomData.setRoomid(results.getString("roomid"));
 				} while (results.next());
 				System.out.println("Out of while loop");
 			} else {
 				System.out.println("Error - result set invalid, must not be empty");
-				validCard.setTagid(tagid);
-				validCard.setReaderid(rfidData.getReaderid());
-				validCard.setValid("false");
+				roomData.setDoorid(doorid);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		closeConnection();
-		System.out.println(validCard);
-		System.out.println(gson.toJson(validCard));
-		return gson.toJson(validCard);
+		System.out.println(roomData);
+		System.out.println(gson.toJson(roomData));
+		return gson.toJson(roomData);
 	}
 }

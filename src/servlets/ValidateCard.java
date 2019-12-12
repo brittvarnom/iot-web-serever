@@ -26,12 +26,8 @@ public class ValidateCard extends HttpServlet {
 	// Collects or returns data for sensorname, sensorvalue parameters
 	private static final long serialVersionUID = 1L;
 
-	// Local variables holding last values stored for each parameter
-	private String lastValidSensorNameStr = "no sensor";
-	private String lastValidSensorValueStr = "invalid";
-
 	Connection connection = null;
-	Statement statement;	
+	Statement statement;
 	Gson gson = new Gson();
 
 	public ValidateCard() {
@@ -39,11 +35,11 @@ public class ValidateCard extends HttpServlet {
 	}
 
 	public void init(ServletConfig config) throws ServletException {
-		System.out.println("Sensor server is up and running\n");
+		System.out.println("Atempts server is up and running\n");
 		System.out.println(
-				"Upload sensor data with http://localhost:8080/PhidgetServer2019/SensorServer?sensorname=xxx&sensorvalue=nnn");
+				"Upload attempts data with http://localhost:8081/IOT_Web_Server/ValidateCard?tagid=xxx&readerid=nnn");
 		System.out.println(
-				"View last sensor reading at  http://localhost:8080/PhidgetServer2019/SensorServer?getdata=true \n\n");
+				"View last attempt at http://localhost:8081/IOT_Web_Server/ValidateCard?getdata=true \n\n");
 	}
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -132,6 +128,7 @@ public class ValidateCard extends HttpServlet {
 				validCard.setReaderid(rfidData.getReaderid());
 				validCard.setValid("false");
 			}
+			updateSensorTable(validCard);
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -140,4 +137,35 @@ public class ValidateCard extends HttpServlet {
 		System.out.println(gson.toJson(validCard));
 		return gson.toJson(validCard);
 	}
+
+	private void updateSensorTable(RFIDdata rfiDdata){
+		try {
+			// Create the INSERT statement from the parameters
+			// set time inserted to be the current time on database server
+			String updateSQL = 
+				 "insert into attempts(tagid, readerid, roomid, valid) " +
+				 "values('"+rfiDdata.getTagid()      + "','" +
+							rfiDdata.getReaderid()  + "','" +
+							rfiDdata.getRoomid()  + "'," +
+							rfiDdata.getValid() + ");";
+			System.out.println(updateSQL);
+							
+				System.out.println("DEBUG: Update: " + updateSQL);
+	
+				getConnection();
+				statement.executeUpdate(updateSQL);
+				closeConnection();
+				
+				System.out.println("DEBUG: Update successful ");
+		} catch (SQLException se) {
+			// Problem with update, return failure message
+			System.out.println(se);
+			System.out.println("\nDEBUG: Update error - see error trace above for help. ");
+			return;
+		}
+	
+		// all ok,  return
+		return;
+	}	
+	
 }
